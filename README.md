@@ -1,96 +1,58 @@
-# Obsidian Sample Plugin
+# Obsidian Image Converter
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+This is a plugin to convert images in your vault from one format to another using ImageMagick.
 
-This project uses Typescript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in Typescript Definition format, which contains TSDoc comments describing what it does.
+## Pre-requisites
 
-**Note:** The Obsidian API is still in early alpha and is subject to change at any time!
+Install ImageMagik on your system.
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open Sample Modal" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
+### macOS
 
-## First time developing plugins?
+On macOS, you can use [Homebrew](https://brew.sh/):
 
-Quick starting guide for new plugin devs:
-
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
-
-## Releasing new releases
-
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
-
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
-
-## Adding your plugin to the community plugin list
-
-- Check https://github.com/obsidianmd/obsidian-releases/blob/master/plugin-review.md
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
-
-## How to use
-
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
-
-## Manually installing the plugin
-
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
-
-## Improve code quality with eslint (optional)
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- To use eslint with this project, make sure to install eslint from terminal:
-  - `npm install -g eslint`
-- To use eslint to analyze this project use this command:
-  - `eslint main.ts`
-  - eslint will then create a report with suggestions for code improvement by file and line number.
-- If your source code is in a folder, such as `src`, you can use eslint with this command to analyze all files in that folder:
-  - `eslint .\src\`
-
-## Funding URL
-
-You can include funding URLs where people who use your plugin can financially support it.
-
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
-
-```json
-{
-    "fundingUrl": "https://buymeacoffee.com"
-}
+```bash
+brew install imagemagick
 ```
 
-If you have multiple URLs, you can also do:
+### Windows
 
-```json
-{
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
-    }
-}
+On Windows, you can use [Chocolatey](https://chocolatey.org/):
+
+```bash
+choco install imagemagick
 ```
 
-## API Documentation
+### Linux
 
-See https://github.com/obsidianmd/obsidian-api
+On Linux, you can use your package manager. For example, on Ubuntu:
+
+```bash
+sudo apt install imagemagick
+```
+
+## Manual Installation
+
+To install this plugin manually:
+
+1. Go to Releases and download the latest release.
+2. Extract the zip to your vault's plugins folder: `<vault>/.obsidian/plugins/`.
+3. Activate the plugin in Settings.
+
+If you want the most recent release:
+
+1. Clone this repo to your vault's plugins folder: `<vault>/.obsidian/plugins/`.
+2. Run `npm i` in the cloned folder.
+3. Run `npm run build` in the cloned folder.
+4. Activate the plugin in Settings.
+
+## Usage
+
+First of all, go in the plugin's settings and configure the path to the `convert` command. On macOS, this is usually `/usr/local/bin/convert`. On Windows, this is usually `C:\Program Files\ImageMagick-7.0.10-Q16-HDRI\convert.exe`. On Linux, this is usually `/usr/bin/convert`. Then, select the desired target format. The default is `webp`.
+
+If everything is configured correctly, when you right click on an image in the file explorer or in a markdown file link, you should see a new option in the context menu: "Convert Image." This command will convert the image to the selected format and update the link in the markdown file.
+
+## Notes
+
+-   This plugin only works on desktop. No mobile support for now.
+-   At the moment, the plugin only replace the link you clicked on. If you have multiple links to the same image, you will have to update them by hand. Global substitution will be implemented in a future release (hopefully).
+-   The plugin will not delete the original image for safety reasons. You will have to delete it by hand if you want to. Or, you can use the [Obsidian Nuke Orphans](https://github.com/sandorex/nuke-orphans-plugin) plugin.
