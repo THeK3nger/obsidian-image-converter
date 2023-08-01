@@ -1,4 +1,3 @@
-import { WebpConverter } from "./WebpConverter";
 import { ImageConverterPluginSettings } from "./ImageConverterPluginSettings";
 import { ImageMagickConverter } from "./ImageMagickConverter";
 import { Converter } from "./Converter";
@@ -7,10 +6,11 @@ export class ImageConverter {
 	converter: Converter;
 
 	constructor(settings: ImageConverterPluginSettings, target: Format) {
+		// This looks useless, but it is there to make sure that
+		// we can extend the plugin with something other than ImageMagick
+		// if we need to.
 		switch (target) {
 			case Format.Webp:
-				this.converter = new WebpConverter(settings.cwebpPath);
-				break;
 			case Format.Avif:
 			case Format.Gif:
 			case Format.Jpeg:

@@ -12,13 +12,14 @@ import { ImageConverterPluginSettings } from "src/ImageConverterPluginSettings";
 import { Format, ImageConverter } from "src/ImageConverter";
 
 const DEFAULT_SETTINGS: ImageConverterPluginSettings = {
-	cwebpPath: "cwebp",
 	convertPath: "convert",
 	defaultTargetImageFormat: Format.Webp,
 };
 
 export default class ImageConverterPlugin extends Plugin {
 	settings: ImageConverterPluginSettings;
+
+	supportedImageFormats = [Format.Jpeg, Format.Png, Format.Gif, Format.Webp];
 
 	async onload() {
 		await this.loadSettings();
@@ -96,7 +97,9 @@ export default class ImageConverterPlugin extends Plugin {
 	}
 
 	private isImageFile(filePath: string): boolean {
-		const imageExtensions = [".png", ".jpg", ".jpeg", ".gif", ".webp"];
+		const imageExtensions = this.supportedImageFormats.map(
+			(format) => `.${format}`
+		);
 		return imageExtensions.some((extension) =>
 			filePath.endsWith(extension)
 		);
@@ -139,10 +142,9 @@ class ImageConverterSettingTab extends PluginSettingTab {
 			.setName("Default Targer Image Format")
 			.setDesc("Default image format to convert to")
 			.addDropdown((dropdown) => {
-				dropdown.addOption("webp", "WebP");
-				dropdown.addOption("png", "PNG");
-				dropdown.addOption("jpg", "JPEG");
-				dropdown.addOption("gif", "GIF");
+				this.plugin.supportedImageFormats.forEach((format) => {
+					dropdown.addOption(format, format.toUpperCase());
+				});
 				dropdown
 					.setValue(this.plugin.settings.defaultTargetImageFormat)
 					.onChange(async (value) => {
@@ -153,14 +155,14 @@ class ImageConverterSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName("cwebp Path")
-			.setDesc("Path to cwebp binary")
+			.setName("convert Path")
+			.setDesc("Path to convert binary")
 			.addText((text) =>
 				text
-					.setPlaceholder("cwebp")
-					.setValue(this.plugin.settings.cwebpPath)
+					.setPlaceholder("convert")
+					.setValue(this.plugin.settings.convertPath)
 					.onChange(async (value) => {
-						this.plugin.settings.cwebpPath = value;
+						this.plugin.settings.convertPath = value;
 						await this.plugin.saveSettings();
 					})
 			);
