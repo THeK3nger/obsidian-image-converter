@@ -49,7 +49,7 @@ If you want the most recent release:
 
 ## Usage
 
-First of all, go in the plugin's settings and configure the path to the `convert` command. On macOS, this is usually `/usr/local/bin/convert`. On Windows, this is usually `C:\Program Files\ImageMagick-7.0.10-Q16-HDRI\convert.exe`. On Linux, this is usually `/usr/bin/convert`. Then, select the desired target format. The default is `webp`.
+First of all, go in the plugin's settings and configure the path to the `convert` command. On macOS, this is usually `/opt/homebrew/bin/convert` (if you installed it via `brew`). On Windows, this is usually `C:\Program Files\ImageMagick-7.0.10-Q16-HDRI\convert.exe`. On Linux, this is usually `/usr/bin/convert`. Then, select the desired target format. The default is `webp`.
 
 If everything is configured correctly, when you right click on an image in the file explorer or in a markdown file link, you should see a new option in the context menu: "Convert Image." This command will convert the image to the selected format and update the link in the markdown file.
 
