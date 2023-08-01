@@ -2,6 +2,8 @@
 
 This is a plugin to convert images in your vault from one format to another using ImageMagick.
 
+![Example](https://github.com/THeK3nger/obsidian-image-converter/assets/133159/6ab8b248-4def-4add-898a-6d6c8f7345fb)
+
 ## Pre-requisites
 
 Install ImageMagik on your system.
