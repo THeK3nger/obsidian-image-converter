@@ -4,25 +4,20 @@ import * as cp from "child_process";
 import { Converter } from "./Converter";
 
 export class ImageMagickConverter implements Converter {
-	constructor(
-		private binaryPath: string,
-		private destinationExtension: string
-	) {}
+	constructor(private binaryPath: string) {}
 
-	convert(filePath: string): Promise<void> {
-		const baseDir = path.dirname(filePath);
-		const fileName = path.basename(filePath);
-		const fileBase = path.parse(fileName).name;
+	convert(inputPath: string, outputPath: string): Promise<void> {
+		console.log(`Converting ${inputPath} to ${outputPath}`);
+		const baseDir = path.dirname(inputPath);
+		const outputName = path.basename(outputPath);
+		const fileName = path.basename(inputPath);
+		console.log(this.binaryPath, fileName, outputName, baseDir);
 
 		return new Promise<void>((resolve, reject) => {
-			const spawned = cp.spawn(
-				this.binaryPath,
-				[fileName, `${fileBase}.${this.destinationExtension}`],
-				{
-					env: process.env,
-					cwd: baseDir,
-				}
-			);
+			const spawned = cp.spawn(this.binaryPath, [fileName, outputName], {
+				env: process.env,
+				cwd: baseDir,
+			});
 
 			spawned.on("close", (code) => {
 				if (code === 0) {

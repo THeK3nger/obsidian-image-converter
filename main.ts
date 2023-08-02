@@ -10,6 +10,7 @@ import {
 import * as path from "path";
 import { ImageConverterPluginSettings } from "src/ImageConverterPluginSettings";
 import { Format, ImageConverter } from "src/ImageConverter";
+import { roundTo } from "src/Utils";
 
 const DEFAULT_SETTINGS: ImageConverterPluginSettings = {
 	convertPath: "convert",
@@ -72,8 +73,21 @@ export default class ImageConverterPlugin extends Plugin {
 		const format = this.settings.defaultTargetImageFormat;
 		try {
 			const converter = new ImageConverter(this.settings, format);
-			await converter.convert(this.getAbsoluteFilePath(filePath));
+			const fullPath = this.getAbsoluteFilePath(filePath);
+			await converter.convert(fullPath);
+			const spaceSavedInKb =
+				-1 * roundTo(converter.getSpaceSaved(fullPath) / 1024, 2);
+			const spaceSavedPercentage =
+				-1 * roundTo(converter.getSpaceSavedPercentage(fullPath), 2);
 			new Notice("Image converted!");
+			console.log(
+				`Space Changed: ${spaceSavedInKb} Kb (${spaceSavedPercentage}%)`
+			);
+			new Notice(
+				`Space ${
+					spaceSavedInKb < 0 ? "Saved" : "Increased"
+				}: ${spaceSavedInKb} Kb (${spaceSavedPercentage}%)`
+			);
 		} catch (e) {
 			new Notice(`Error converting image: ${e}`);
 			throw e;

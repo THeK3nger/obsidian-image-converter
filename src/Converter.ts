@@ -1,3 +1,3 @@
 export interface Converter {
-	convert(filePath: string): Promise<void>;
+	convert(filePath: string, outputPath: string): Promise<void>;
 }
