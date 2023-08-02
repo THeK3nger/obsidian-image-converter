@@ -37,6 +37,7 @@ export class ImageConverter {
 export enum Format {
 	Webp = "webp",
 	Jpeg = "jpeg",
+	Jpg = "jpg",
 	Png = "png",
 	Gif = "gif",
 	Avif = "avif",

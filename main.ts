@@ -19,7 +19,13 @@ const DEFAULT_SETTINGS: ImageConverterPluginSettings = {
 export default class ImageConverterPlugin extends Plugin {
 	settings: ImageConverterPluginSettings;
 
-	supportedImageFormats = [Format.Jpeg, Format.Png, Format.Gif, Format.Webp];
+	supportedImageFormats = [
+		Format.Jpeg,
+		Format.Jpg,
+		Format.Png,
+		Format.Gif,
+		Format.Webp,
+	];
 
 	async onload() {
 		await this.loadSettings();
@@ -143,6 +149,8 @@ class ImageConverterSettingTab extends PluginSettingTab {
 			.setDesc("Default image format to convert to")
 			.addDropdown((dropdown) => {
 				this.plugin.supportedImageFormats.forEach((format) => {
+					// Ignore Jpg because it the same of Jpeg.
+					if (format === Format.Jpg) return;
 					dropdown.addOption(format, format.toUpperCase());
 				});
 				dropdown
