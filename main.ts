@@ -26,6 +26,7 @@ export default class ImageConverterPlugin extends Plugin {
 		Format.Png,
 		Format.Gif,
 		Format.Webp,
+		Format.Avif,
 	];
 
 	async onload() {
