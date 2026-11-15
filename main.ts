@@ -10,26 +10,42 @@ import {
 import * as path from "path";
 import { ImageConverterPluginSettings } from "src/ImageConverterPluginSettings";
 import { Format, ImageConverter } from "src/ImageConverter";
-import { roundTo } from "src/Utils";
+import { formatSpaceChange, roundTo } from "src/Utils";
+import { replaceImageLinkExtensionAtCursor } from "src/MarkdownLinks";
+
+const IMAGE_FORMATS: readonly Format[] = [
+	Format.Jpeg,
+	Format.Jpg,
+	Format.Png,
+	Format.Gif,
+	Format.Webp,
+	Format.Avif,
+];
+
+const TARGET_IMAGE_FORMATS: readonly Format[] = [
+	Format.Jpeg,
+	Format.Png,
+	Format.Gif,
+	Format.Webp,
+	Format.Avif,
+];
 
 const DEFAULT_SETTINGS: ImageConverterPluginSettings = {
 	convertPath: "convert",
 	defaultTargetImageFormat: Format.Webp,
 };
 
+function isTargetImageFormat(value: unknown): value is Format {
+	return (
+		typeof value === "string" &&
+		TARGET_IMAGE_FORMATS.includes(value as Format)
+	);
+}
+
 export default class ImageConverterPlugin extends Plugin {
 	settings!: ImageConverterPluginSettings;
 
-	supportedImageFormats = [
-		Format.Jpeg,
-		Format.Jpg,
-		Format.Png,
-		Format.Gif,
-		Format.Webp,
-		Format.Avif,
-	];
-
-	async onload() {
+	async onload(): Promise<void> {
 		await this.loadSettings();
 
 		this.addSettingTab(new ImageConverterSettingTab(this.app, this));
@@ -43,27 +59,42 @@ export default class ImageConverterPlugin extends Plugin {
 				)
 					return;
 				menu.addItem((item) => {
-					item.setTitle("Convert Image")
+					item.setTitle("Convert image")
 						.setIcon("image-off")
-						.onClick(async () =>
-							this.convertImageAndReplace(fPath, source)
-						);
+						.onClick(() => {
+							void this.convertImageAndReplace(fPath, source).catch(
+								(error: unknown) => {
+									console.error("Unexpected image conversion error", error);
+									const message =
+										error instanceof Error ? error.message : String(error);
+									new Notice(`Error converting image: ${message}`);
+								}
+							);
+						});
 				});
 			})
 		);
 	}
 
-	onunload() {}
+	private async loadSettings(): Promise<void> {
+		const loadedSettings =
+			(await this.loadData()) as Partial<ImageConverterPluginSettings> | null;
 
-	async loadSettings() {
-		this.settings = Object.assign(
-			{},
-			DEFAULT_SETTINGS,
-			await this.loadData()
-		);
+		this.settings = {
+			convertPath:
+				typeof loadedSettings?.convertPath === "string" &&
+				loadedSettings.convertPath.trim().length > 0
+					? loadedSettings.convertPath
+					: DEFAULT_SETTINGS.convertPath,
+			defaultTargetImageFormat: isTargetImageFormat(
+				loadedSettings?.defaultTargetImageFormat
+			)
+				? loadedSettings.defaultTargetImageFormat
+				: DEFAULT_SETTINGS.defaultTargetImageFormat,
+		};
 	}
 
-	async saveSettings() {
+	async saveSettings(): Promise<void> {
 		await this.saveData(this.settings);
 	}
 
@@ -72,64 +103,61 @@ export default class ImageConverterPlugin extends Plugin {
 		source: string
 	): Promise<void> {
 		const format = this.settings.defaultTargetImageFormat;
+		let spaceSavedInKb: number;
+		let spaceSavedPercentage: number;
+
 		try {
 			const converter = new ImageConverter(this.settings, format);
 			const fullPath = this.getAbsoluteFilePath(filePath);
 			await converter.convert(fullPath);
-			const spaceSavedInKb =
-				-1 * roundTo(converter.getSpaceSaved(fullPath) / 1024, 2);
-			const spaceSavedPercentage =
-				-1 * roundTo(converter.getSpaceSavedPercentage(fullPath), 2);
-			new Notice("Image converted!");
-			console.log(
-				`Space Changed: ${spaceSavedInKb} Kb (${spaceSavedPercentage}%)`
+			spaceSavedInKb = roundTo(converter.getSpaceSaved(fullPath) / 1024, 2);
+			spaceSavedPercentage = roundTo(
+				converter.getSpaceSavedPercentage(fullPath),
+				2
 			);
-			new Notice(
-				`Space ${
-					spaceSavedInKb < 0 ? "Saved" : "Increased"
-				}: ${spaceSavedInKb} Kb (${spaceSavedPercentage}%)`
-			);
-		} catch (e) {
-			new Notice(`Error converting image: ${e}`);
-			throw e;
+		} catch (error: unknown) {
+			console.error("Image conversion failed", error);
+			const message = error instanceof Error ? error.message : String(error);
+			new Notice(`Error converting image: ${message}`);
+			return;
 		}
-		console.log(`SOURCE: ${source}`);
-		if (source === "link-context-menu") {
-			const editor =
-				this.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
-			if (!editor) return;
-			new Notice("Updating image path...");
-			const lineNumber = editor.getCursor().line;
-			const line = editor.getLine(lineNumber);
-			const imageFileName = path.basename(filePath);
-			const imageFileNameWithoutExtension = imageFileName.substring(
-				0,
-				imageFileName.lastIndexOf(".")
-			);
-			console.log(
-				`Replacing ${imageFileName} with ${imageFileNameWithoutExtension}.${format} on ${line}`
-			);
-			const newLine = line.replace(
-				imageFileName,
-				`${imageFileNameWithoutExtension}.${format}`
-			);
-			editor.setLine(lineNumber, newLine);
+
+		new Notice("Image converted!");
+		new Notice(formatSpaceChange(spaceSavedInKb, spaceSavedPercentage));
+
+		if (source !== "link-context-menu") return;
+
+		const editor =
+			this.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
+		if (!editor) {
+			new Notice("Image converted, but the active link could not be updated.");
+			return;
 		}
+
+		const cursor = editor.getCursor();
+		const line = editor.getLine(cursor.line);
+		const updatedLine = replaceImageLinkExtensionAtCursor(
+			line,
+			cursor.ch,
+			filePath,
+			format
+		);
+		if (updatedLine === null) {
+			new Notice("Image converted, but the active link could not be updated.");
+			return;
+		}
+
+		editor.setLine(cursor.line, updatedLine);
 	}
 
 	private isImageFile(filePath: string): boolean {
-		const imageExtensions = this.supportedImageFormats.map(
-			(format) => `.${format}`
-		);
-		return imageExtensions.some((extension) =>
-			filePath.endsWith(extension)
-		);
+		const extension = path.extname(filePath).slice(1).toLowerCase();
+		return IMAGE_FORMATS.includes(extension as Format);
 	}
 
 	private extensionIsCurrentFormat(filePath: string): boolean {
-		const extension = path.extname(filePath);
-		const currentFormat = this.settings.defaultTargetImageFormat;
-		return extension === `.${currentFormat}`;
+		const extension = path.extname(filePath).slice(1).toLowerCase();
+		return extension === this.settings.defaultTargetImageFormat;
 	}
 
 	private getVaultAbsolutePath(): string {
@@ -147,7 +175,7 @@ export default class ImageConverterPlugin extends Plugin {
 }
 
 class ImageConverterSettingTab extends PluginSettingTab {
-	plugin: ImageConverterPlugin;
+	private readonly plugin: ImageConverterPlugin;
 
 	constructor(app: App, plugin: ImageConverterPlugin) {
 		super(app, plugin);
@@ -160,26 +188,24 @@ class ImageConverterSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName("Default Targer Image Format")
+			.setName("Default target image format")
 			.setDesc("Default image format to convert to")
 			.addDropdown((dropdown) => {
-				this.plugin.supportedImageFormats.forEach((format) => {
-					// Ignore Jpg because it the same of Jpeg.
-					if (format === Format.Jpg) return;
+				TARGET_IMAGE_FORMATS.forEach((format) => {
 					dropdown.addOption(format, format.toUpperCase());
 				});
 				dropdown
 					.setValue(this.plugin.settings.defaultTargetImageFormat)
 					.onChange(async (value) => {
-						this.plugin.settings.defaultTargetImageFormat =
-							value as Format;
+						if (!isTargetImageFormat(value)) return;
+						this.plugin.settings.defaultTargetImageFormat = value;
 						await this.plugin.saveSettings();
 					});
 			});
 
 		new Setting(containerEl)
-			.setName("convert Path")
-			.setDesc("Path to convert binary")
+			.setName("Convert path")
+			.setDesc("Path to the ImageMagick convert binary")
 			.addText((text) =>
 				text
 					.setPlaceholder("convert")
