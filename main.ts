@@ -18,7 +18,7 @@ const DEFAULT_SETTINGS: ImageConverterPluginSettings = {
 };
 
 export default class ImageConverterPlugin extends Plugin {
-	settings: ImageConverterPluginSettings;
+	settings!: ImageConverterPluginSettings;
 
 	supportedImageFormats = [
 		Format.Jpeg,
