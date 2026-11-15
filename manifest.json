@@ -1,7 +1,7 @@
 {
 	"id": "image-converter",
 	"name": "Image Converter",
-	"version": "0.10.0",
+	"version": "0.11.0",
 	"minAppVersion": "1.5.3",
 	"description": "Converts images to different formats.",
 	"author": "Davide Aversa",
